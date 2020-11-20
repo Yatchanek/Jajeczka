@@ -5,37 +5,58 @@ const eggs = []
 let tickLength = 700
 let elapsedTime = 0
 let spawnInterval = 6
+let eggSpeed = Math.PI * 2
 let lastFrame = 0
 let ticks = 0
 let gameOver = false
 let score = 0
 let lastEgg = 0
 let preLastEgg = 1
-const moveDist = 100
+let mouseX = 0
+let mouseY = 0
+let w = gameWindow.width = window.innerWidth
+let h = gameWindow.height = window.innerHeight
+let eggSize = Math.max(w, h) * 0.018
+let slopeLength = w * 0.33
+let slopeAngle = Math.PI / 16
+let slopeWidth = 20
+let upper = h * 0.15
+let bottom = h * 0.70
 
 class Egg {
     constructor(pos) {
-        this.x = pos % 2 === 0 ? 30 - moveDist : gameWindow.width - 30 + moveDist
-        this.y = pos < 2 ? 100 : gameWindow.height - 100
-        this.r = 30
+        this.r = eggSize
+        this.x = pos % 2 === 0 ? 0 : w 
+        this.y = pos < 2 ? upper - this.r - slopeWidth / 2 : bottom - this.r - slopeWidth / 2
         this.pos = pos
         this.dir = pos % 2 === 0 ? 1 : -1
         this.steps = 0
+        this.rotationSpeed = eggSpeed
+        this.angle = 0
+        this.interval = (Math.PI * 2) / 50
+        this.circ = this.r * Math.PI * 2
+        this.dist = 0
     }
 
-    update() {
+    update(delta) {
         if (!this.caught) {
-            this.steps++
-            this.x += moveDist * this.dir
-            if (this.steps === 6) {
+            this.angle += this.rotationSpeed * delta
+            let d = this.circ * (this.rotationSpeed * delta / (Math.PI * 2)) * this.dir
+            this.x += d * Math.cos(slopeAngle)
+            this.y += Math.abs(d) * Math.sin(slopeAngle)
+            this.dist += Math.abs(d)
+            
+            if (this.dist >= slopeLength * 1.1) {
                 if (this.pos != player.pos) {
                     gameOver = true
-                }
+                }  
                 else {
                     this.caught = true
                     score++
                     if (score > 0 && score % 10 === 0 && tickLength > 100) {
                         tickLength -=50
+                        eggSpeed += Math.PI * 0.075
+                        slopeAngle += Math.PI / 400
                     } 
                     if (score > 0 && score % 25 === 0 && spawnInterval > 2) {
                         spawnInterval--
@@ -50,65 +71,87 @@ class Egg {
     }
 
     show() {
-        ctx.fillStyle = 'rgb(200, 0, 0)'
-        ctx.beginPath()
-        ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI)
-        ctx.fill()
+        let i = 0
+        ctx.strokeStyle = `rgb(${i}, 0, 0)`
+        ctx.lineWidth = 0
+            for(i = 0; i < 50; i++) {
+                ctx.fillStyle = `hsl(${360 * i / 50}, 80%, 50%)`
+                ctx.beginPath()
+                ctx.moveTo(this.x, this.y)
+                ctx.lineTo(this.x + this.r * Math.cos(i * this.interval + this.angle * this.dir), this.y + this.r * Math.sin(i * this.interval + this.angle * this.dir))
+                ctx.arc(this.x, this.y, this.r, i * this.interval + this.angle * this.dir, (i + 1) * this.interval + this.angle * this.dir)
+                ctx.moveTo(this.x + this.r * Math.cos((i+1) * this.interval + this.angle * this.dir), this.y + this.r * Math.sin((i+1) * this.interval + this.angle * this.dir))
+                ctx.lineTo(this.x, this.y)
+                ctx.closePath()
+                ctx.fill()
+            }
     }
 }
 
 class Player {
     constructor(x,y) {
-        this.w = 90
-        this.h = 60
+        this.w = Math.floor(Math.max(w, h) * 0.06)
+        this.h = Math.floor(Math.max(w, h) * 0.04)
         this.pos = 0
     }
 
     show() {
-        ctx.fillStyle = 'rgb(0, 200, 0)'
+        ctx.fillStyle = 'rgb(150, 200, 0)'
         switch(this.pos) {
             case 0:
-                this.x = 6 * moveDist - this.w
-                this.y = 100 - this.h / 2
+                this.x = slopeLength * Math.cos(slopeAngle) + this.w / 5
+                this.y = upper + slopeLength * Math.sin(slopeAngle)
             break
 
             case 1:
-                this.x = gameWindow.width - 6 * moveDist
-                this.y = 100 - this.h / 2
+                this.x = w - slopeLength * Math.cos(slopeAngle) - this.w * 1.2
+                this.y = upper + slopeLength * Math.sin(slopeAngle)
             break
 
             case 2:
-                this.x = 6 * moveDist - this.w
-                this.y = gameWindow.height - 100 - this.h / 2
+                this.x = slopeLength * Math.cos(slopeAngle) + this.w / 5
+                this.y = bottom + slopeLength * Math.sin(slopeAngle)
             break
 
             case 3:
-                this.x = gameWindow.width - 6 * moveDist
-                this.y = gameWindow.height - 100 - this.h / 2
+                this.x = w - slopeLength * Math.cos(slopeAngle) - this.w * 1.2
+                this.y = bottom + slopeLength * Math.sin(slopeAngle)
+                break
             break
         }
-        ctx.fillRect(this.x, this.y, this.w, this.h)
+        //ctx.fillRect(this.x, this.y, this.w, this.h)
+        ctx.beginPath()
+        ctx.arc(this.x + this.w / 2, this.y, this.w / 2, 0, Math.PI)
+        ctx.fill()
     }
 }
 
 function drawField() {
-    ctx.strokeStyle = 'rgb(150, 150, 0)'
-    ctx.lineWidth = 5
+    ctx.strokeStyle = 'rgb(115, 77, 38)'
+    ctx.lineWidth = slopeWidth
+
+    //Left up
     ctx.beginPath()
-    ctx.moveTo(0, 130)
-    ctx.lineTo(5 * moveDist, 130)
+    ctx.moveTo(0, upper)
+    ctx.lineTo(slopeLength * Math.cos(slopeAngle), upper + slopeLength * Math.sin(slopeAngle))
     ctx.stroke()
+
+    //Left Down
     ctx.beginPath()
-    ctx.moveTo(0, gameWindow.height - 70)
-    ctx.lineTo(5 * moveDist, gameWindow.height - 70)
+    ctx.moveTo(0, bottom)
+    ctx.lineTo(slopeLength * Math.cos(slopeAngle), bottom + slopeLength * Math.sin(slopeAngle))
     ctx.stroke()
+
+    //Right Up
     ctx.beginPath()
-    ctx.moveTo(gameWindow.width, 130)
-    ctx.lineTo(gameWindow.width - 5 * moveDist, 130)
+    ctx.moveTo(gameWindow.width, upper)
+    ctx.lineTo(gameWindow.width - slopeLength * Math.cos(slopeAngle), upper + slopeLength * Math.sin(slopeAngle))
     ctx.stroke()
+
+    //Right Down
     ctx.beginPath()
-    ctx.moveTo(gameWindow.width, gameWindow.height - 70)
-    ctx.lineTo(gameWindow.width - 5 * moveDist, gameWindow.height - 70)
+    ctx.moveTo(gameWindow.width, bottom)
+    ctx.lineTo(gameWindow.width - slopeLength * Math.cos(slopeAngle), bottom + slopeLength * Math.sin(slopeAngle))
     ctx.stroke()
 
     ctx.font = `${Math.floor(gameWindow.width * 0.02)}px Arial`
@@ -132,7 +175,38 @@ function spawnEgg() {
 
 function cls() {
     ctx.fillStyle = 'rgb(21, 21, 21)'
-    ctx.fillRect(0,0, 1600, 800)
+    ctx.fillRect(0,0, w, h)
+}
+
+function mouseInBounds(x1, y1, x2, y2) {
+    return (mouseX > x1 && mouseX < x2 && mouseY > y1 && mouseY < y2)
+}
+
+function handleClick(e) {
+    mouseX = e.pageX
+    mouseY = e.pageY
+
+    if (mouseInBounds(slopeLength * Math.cos(slopeAngle) + player.w / 5, upper + slopeLength * Math.sin(slopeAngle) ,
+    slopeLength * Math.cos(slopeAngle) + player.w * 1.2, upper + slopeLength * Math.sin(slopeAngle) + player.h * 1.2)) {
+        player.pos = 0
+    }
+
+
+    if (mouseInBounds(w - slopeLength * Math.cos(slopeAngle) - player.w * 1.2, upper + slopeLength * Math.sin(slopeAngle) ,
+    w - slopeLength * Math.cos(slopeAngle) - player.w / 5, upper + slopeLength * Math.sin(slopeAngle) + player.h * 1.2)) {
+        player.pos = 1
+    }
+
+    if (mouseInBounds(slopeLength * Math.cos(slopeAngle) + player.w / 5, bottom + slopeLength * Math.sin(slopeAngle) ,
+    slopeLength * Math.cos(slopeAngle) + player.w * 1.2, bottom + slopeLength * Math.sin(slopeAngle) + player.h * 1.2)) {
+        player.pos = 2
+    }
+
+    if (mouseInBounds(w - slopeLength * Math.cos(slopeAngle) - player.w * 1.2, bottom + slopeLength * Math.sin(slopeAngle) ,
+    w - slopeLength * Math.cos(slopeAngle) - player.w / 5, bottom + slopeLength * Math.sin(slopeAngle) + player.h * 1.2)) {
+        player.pos = 3
+    }
+
 }
 
 function handleKeyInput(e) {
@@ -160,32 +234,32 @@ function gameLoop(timestamp) {
     let delta = timestamp - lastFrame
     lastFrame = timestamp
     elapsedTime += delta
-    if (elapsedTime >= tickLength) {
-        
+    for (let i = eggs.length - 1; i>=0; i--) {
+                 eggs[i].update(delta / 1000)
+                 if (eggs[i].expired) {
+                     eggs.splice(i, 1)
+                 }
+         }
+     if (elapsedTime >= tickLength) {     
         elapsedTime = 0
         ticks++
         if (ticks % spawnInterval === 0) {
-            spawnEgg()
+             spawnEgg()
         }
-        for (let i = eggs.length - 1; i>=0; i--) {
-            eggs[i].update()
-            if (eggs[i].expired) {
-                eggs.splice(i, 1)
-            }
-        }
-    }
+     }
 
 
     drawField()
-    player.show()
     eggs.forEach(e => e.show())
+    player.show()
+    
     if (!gameOver) requestAnimationFrame(gameLoop)
 
 }
 
 const player = new Player()
-gameWindow.width = 1600 
-gameWindow.height = 800
+
 requestAnimationFrame(gameLoop)
 
 window.addEventListener('keyup', e => handleKeyInput(e))
+window.addEventListener('pointerdown', e => handleClick(e))
