@@ -75,7 +75,7 @@ class Egg {
         ctx.strokeStyle = `rgb(${i}, 0, 0)`
         ctx.lineWidth = 0
             for(i = 0; i < 50; i++) {
-                ctx.fillStyle = `hsl(${360 * i / 50}, 80%, 50%)`
+                ctx.fillStyle = `hsl(${360 * i / 50}, 65%, 50%)`
                 ctx.beginPath()
                 ctx.moveTo(this.x, this.y)
                 ctx.lineTo(this.x + this.r * Math.cos(i * this.interval + this.angle * this.dir), this.y + this.r * Math.sin(i * this.interval + this.angle * this.dir))
@@ -119,7 +119,6 @@ class Player {
                 break
             break
         }
-        //ctx.fillRect(this.x, this.y, this.w, this.h)
         ctx.beginPath()
         ctx.arc(this.x + this.w / 2, this.y, this.w / 2, 0, Math.PI)
         ctx.fill()
@@ -156,10 +155,10 @@ function drawField() {
 
     ctx.font = `${Math.floor(gameWindow.width * 0.02)}px Arial`
     let txt = `Score: ${score}`
-    let w = ctx.measureText(txt).width
+    let tw = ctx.measureText(txt).width
     ctx.baseline = 'middle'
     ctx.fillStyle = 'rgb(255, 255,255)'
-    ctx.fillText(txt, (gameWindow.width - w) / 2, gameWindow.height / 2)
+    ctx.fillText(txt, (gameWindow.width - tw) / 2, gameWindow.height / 2)
 }
 
 function spawnEgg() {
@@ -186,24 +185,20 @@ function handleClick(e) {
     mouseX = e.pageX
     mouseY = e.pageY
 
-    if (mouseInBounds(slopeLength * Math.cos(slopeAngle) + player.w / 5, upper + slopeLength * Math.sin(slopeAngle) ,
-    slopeLength * Math.cos(slopeAngle) + player.w * 1.2, upper + slopeLength * Math.sin(slopeAngle) + player.h * 1.2)) {
+    if (mouseInBounds(0, 0, w / 5, h / 4)) {
         player.pos = 0
     }
 
 
-    if (mouseInBounds(w - slopeLength * Math.cos(slopeAngle) - player.w * 1.2, upper + slopeLength * Math.sin(slopeAngle) ,
-    w - slopeLength * Math.cos(slopeAngle) - player.w / 5, upper + slopeLength * Math.sin(slopeAngle) + player.h * 1.2)) {
+    if (mouseInBounds(w * 0.8, 0, w, h / 4)) {
         player.pos = 1
     }
 
-    if (mouseInBounds(slopeLength * Math.cos(slopeAngle) + player.w / 5, bottom + slopeLength * Math.sin(slopeAngle) ,
-    slopeLength * Math.cos(slopeAngle) + player.w * 1.2, bottom + slopeLength * Math.sin(slopeAngle) + player.h * 1.2)) {
+    if (mouseInBounds(0, h * 0.75, w / 5, h)) {
         player.pos = 2
     }
 
-    if (mouseInBounds(w - slopeLength * Math.cos(slopeAngle) - player.w * 1.2, bottom + slopeLength * Math.sin(slopeAngle) ,
-    w - slopeLength * Math.cos(slopeAngle) - player.w / 5, bottom + slopeLength * Math.sin(slopeAngle) + player.h * 1.2)) {
+    if (mouseInBounds(w * 0.8, h * 0.75, w, h)) {
         player.pos = 3
     }
 
